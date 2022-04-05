@@ -1,4 +1,5 @@
 from requests import get, utils
+import datetime as dt
 
 response = get('http://www.cbr.ru/scripts/XML_daily.asp')
 
@@ -6,6 +7,12 @@ encodings = utils.get_encoding_from_headers(response.headers)
 content = response.content.decode(encoding=encodings)
 
 text = content.split('><')
+
+exchange_time = []
+for i in text:
+    if 'ValCurs Date' in i:
+        exchange_time.append(i)
+
 
 char_code = []
 for i in text:
@@ -19,18 +26,21 @@ for i in text:
 
 char_code = list(map(lambda x: x.replace('CharCode>', '').replace('</CharCode', ''), char_code))
 cur_value = list(map(lambda x: x.replace('Value>', '').replace(',', '.').replace('</Value', ''), cur_value))
+exchange_time = list(map(lambda x: x.replace('ValCurs Date="', '')
+                         .replace('" name="Foreign Currency Market"', '').replace('.', ' '), exchange_time))
 
 currency = dict(zip(char_code, cur_value))
 
 
 def exchange_ratio(num):
-    """Func returns value from dict {words}"""
+    """Func returns value of the currency in Rubles"""
     num = num.upper()
     if num in currency.keys():
         return float(currency.get(num))
 
 
-exchange = input('Pls enter code of the currency you want to see exchange ratio for or \'q\' to quite: ')
+exchange = input('Pls enter currency code for exchange ratio or \'q\' to quite: ')
 while exchange != 'q':
+    print(dt.datetime.strptime(exchange_time[0], '%d %m %Y').date())
     print(exchange_ratio(exchange))
-    exchange = input('Pls enter code of the currency you want to see exchange ratio for or \'q\' to quite: ')
+    exchange = input('Pls enter currency code for exchange ratio or \'q\' to quite: ')
